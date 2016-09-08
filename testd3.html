@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="d3.min.js"></script>
+
+		<script>
+		var coef = {};
+		
+		d3.csv("average_coef_sept_3.csv", function(error, dataset) {
+			dataset.forEach(function(d) {
+				coef[d.Term] = {};
+				coef[d.Term]['Trump'] = d.Trump;
+				coef[d.Term]['Clinton'] = d.Clinton;
+			});
+		});
+
+
+		var sentences = {};
+		d3.csv("cv_result_sept_3.csv", function(error, dataset) {
+			num_sentences = 0;
+			dataset.forEach(function(d) {
+				sentences[num_sentences] = {}
+				sentences[num_sentences]['Sentence'] = d.sentence;
+				sentences[num_sentences]['Date'] = d.date;
+				sentences[num_sentences]['Speaker'] = d.speaker;
+				sentences[num_sentences]['Speech'] = d['title'];
+				sentences[num_sentences]['Trump'] = d.Trump;
+				sentences[num_sentences]['Token_List'] = d.token_list;
+				sentences[num_sentences]['Clinton'] = d.Clinton;
+				sentences[num_sentences]['Correct'] = d.correct;
+				num_sentences += 1;
+			});
+		var rand_id = 0;
+		// console.log(dictionary['believe']);
+		// console.log(dataset[0]);
+		});
+
+		
+		</script>
+
+		<script>
+		
+            var bar_height = 20;
+            var bar_margin = 2;
+            var middle = 250;
+            var width_multiplier = 80;
+            var text_margin = 10;
+            var max_coef = Math.log(5);
+            var min_color = .5;
+
+		function myFunction() {
+		    var x = document.getElementById("myText").value;
+		    var demo_text = document.getElementById('demo').innerHTML;
+		    if (x in coef) {
+		    	// console.log(x);
+				document.getElementById("demo").innerHTML = demo_text + '<br />'+x+": "+"Trump: "+coef[x]['Trump']+"  Clinton: "+coef[x]['Clinton'];
+				document.getElementById("not_found").innerHTML = ''
+		    }
+		    else {
+				document.getElementById("not_found").innerHTML = "Not in top 2500";		
+
+		    };
+		};
+
+
+		function randomSentence() {
+			document.getElementById('QuizMeButton').visible = false;
+			rand_id = Math.floor(Math.random()*num_sentences);
+			console.log(rand_id);
+		    // var x = document.getElementById("myText").value;
+		    // var demo_text = document.getElementById('demo').innerHTML;
+		    document.getElementById('sentence').innerHTML = "\""+sentences[rand_id].Sentence+"\"";
+		    document.getElementById('coef_div').innerHTML = '';		    
+		    document.getElementById('WhoSaidIt').innerHTML = "<strong>Who said this?</strong><br /><button onclick='guess(\"Clinton\")'>Clinton</button><button onclick='guess(\"Trump\")'>Trump</button>";
+		};
+
+		function guess(guessed_candidate) {
+			var result_string = "";
+			if (sentences[rand_id].Speaker == guessed_candidate) {
+				result_string = result_string + "Correct! <br />";
+			}
+			else {
+				result_string = result_string + "Incorrect! <br />";
+			};
+			result_string = result_string + "This sentence was said on "+sentences[rand_id].Date +" during \"" +sentences[rand_id].Speech +"\"<br /><br />";
+			if (sentences[rand_id].Correct == "True") {
+				result_string = result_string + "The model got it right, predicting <br />";
+			}
+			else {
+				result_string = result_string + "The model got it wrong, predicting <br />";
+			};
+			result_string = result_string + "Trump: "+ sentences[rand_id].Trump + "<br />Clinton: "+sentences[rand_id].Clinton;
+
+			document.getElementById('WhoSaidIt').innerHTML = result_string;
+			display_coefficients(sentences[rand_id].Token_List);
+		};
+
+
+
+		function display_coefficients(token_string) {
+			var list = ''
+			tokens_with_quotes = token_string.match(/'(.*?)'/g);
+			var tokens = [];
+			var tokens_used = {}; // I can't believe javascript doesn't have a (IE compatible) way to check if a string is in a list, only an associative array object.
+		
+			for (i=0; i<tokens_with_quotes.length; i++) {
+				token = tokens_with_quotes[i].replace(/'/g, "");
+				if ((token in coef) && !(token in tokens_used)) {
+					tokens_used[token] = '';
+					tokens.push([token, coef[token].Trump, coef[token].Clinton]);
+					tokens.sort(function(a,b){return a[1]-b[1];});
+				};
+			};
+
+			var svg_container = d3.select("#coef_div")
+            .append("svg")
+            .attr("width", 500)
+            .attr("height", 500);
+
+
+            var bars = svg_container.selectAll('rect').data(tokens).enter().append('rect');
+            bars = bars
+            .attr('height', bar_height)
+            // .attr('fill', 'green') // write a function for this soon
+            .attr('stroke', "rgb(0,0,0)")
+            .attr('fill', function (d) { // not coding flexibly for this iteration
+            	log_odds = Math.log(d[1])
+            	if (Math.abs(log_odds) >1) {log_odds = log_odds/Math.abs(log_odds)};
+            	
+            	color_percent = (log_odds/Math.abs(log_odds))*log_odds/max_coef;
+            	color_percent = Math.min(min_color, color_percent);
+            	adjusted_color = 255-Math.floor(255*color_percent);
+
+            	if (log_odds < 0){ // bar is to the left, ie Clinton, ie blue
+            		// console.log(log_odds, color_percent);
+            		return "rgb("+adjusted_color+","+adjusted_color+",255)";
+            	}
+            	else {
+					return "rgb(255,"+adjusted_color+","+adjusted_color+")";
+					};
+            })
+            .attr('y', function (d,i) {return i*(bar_height+bar_margin) + 'px';})
+            .attr('x', function (d) {
+            	var log_odds = Math.log(d[1]);
+					if (log_odds < 0) {
+						return middle+(log_odds*width_multiplier) + 'px'; // Since log_odds is negative, this shifts the bar to the left
+					}
+					else {
+						return middle+'px';
+					};
+				})
+            .attr('width', function (d){return Math.abs(Math.log(d[1]))*width_multiplier;});
+
+            var terms = svg_container.selectAll('text').data(tokens).enter().append('text')
+            	.attr('x', function (d) {
+            		if (d[1]<1) { //Implies bar to the left, so text to the right
+            			return middle + text_margin+'px';
+            		}
+            		else {
+            			return middle - text_margin + 'px';
+            		}
+            	})
+            	.attr('y', function (d,i) {return i*(bar_height+bar_margin) + 'px';})
+            	.attr('text-anchor', function (d) {
+            		if (d[1] <1) {
+            			return 'start';
+            		}
+            		else{
+            			return 'end';
+            		}
+            	})
+            	.attr('dy', '.91em')
+            	.text(function (d) {
+            		if (d[1]<1) {
+	            			return d[0]+" - "+parseFloat(Math.round(d[2] * 100) / 100).toFixed(2);
+	            		}
+	            		else {
+	            			return parseFloat(Math.round(d[1] * 100) / 100).toFixed(2)+" - "+ d[0];
+	            		};
+            	});
+
+
+		};
+
+		
+		</script>
+
+
+	</head>
+
+	<body>
+		<div>
+
+			<p id="sentence"></p>
+			<!-- <input type="text" id="sentence_input" value="Who said it?" /> -->
+			<button id='QuizMeButton' onclick="randomSentence()">Quiz me!</button>
+			<p id='WhoSaidIt'></p>
+			<div id='coef_div'>
+			</div>
+
+
+		</div> 
+<div>
+			<!-- // <script src="testd3.js" charset="utf-8"></script> -->
+			<h3>Look up terms</h3>
+
+			<input type="text" id="myText" value="Some text..." />
+
+			<p id='not_found'></p>
+
+			<button onclick="myFunction()">Try it</button>
+
+			<p id="demo"></p>
+		</div>
+	</body>
+
+
+</html> 
