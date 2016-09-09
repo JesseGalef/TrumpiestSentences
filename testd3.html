@@ -2,11 +2,11 @@
 <html>
 	<head>
 		<script type="text/javascript" src="d3.min.js"></script>
+
 		<script>
-			
 		var coef = {};
 		
-		d3.csv("average_coef_sept_3.csv", function(error, dataset) {
+		d3.csv("average_coef_sept_8.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
 				coef[d.Term] = {};
 				coef[d.Term]['Trump'] = d.Trump;
@@ -16,8 +16,8 @@
 
 
 		var sentences = {};
-		d3.csv("cv_result_sept_3.csv", function(error, dataset) {
-			num_sentences = 0;
+		var num_sentences = 0;
+		d3.csv("cv_result_sept_8.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
 				sentences[num_sentences] = {}
 				sentences[num_sentences]['Sentence'] = d.sentence;
@@ -25,7 +25,7 @@
 				sentences[num_sentences]['Speaker'] = d.speaker;
 				sentences[num_sentences]['Speech'] = d['title'];
 				sentences[num_sentences]['Trump'] = d.Trump;
-				sentences[num_sentences]['Token_List'] = d.token_list;
+				// sentences[num_sentences]['Token_List'] = d.token_list;
 				sentences[num_sentences]['Clinton'] = d.Clinton;
 				sentences[num_sentences]['Correct'] = d.correct;
 				num_sentences += 1;
@@ -89,28 +89,31 @@
 			else {
 				result_string = result_string + "The model got it wrong, predicting <br />";
 			};
-			result_string = result_string + "Trump: "+ sentences[rand_id].Trump + "<br />Clinton: "+sentences[rand_id].Clinton;
+			result_string = result_string + "Trump: "+ parseFloat(Math.round(sentences[rand_id].Trump * 100)).toFixed(2) + "%<br />Clinton: "+parseFloat(Math.round(sentences[rand_id].Clinton * 100)).toFixed(2)+"%";
 
 			document.getElementById('WhoSaidIt').innerHTML = result_string;
-			display_coefficients(sentences[rand_id].Token_List);
+			display_coefficients(sentences[rand_id].Sentence);
 		};
 
 
 
 		function display_coefficients(token_string) {
-			var list = ''
-			tokens_with_quotes = token_string.match(/'(.*?)'/g);
+			
+			term_tokens = token_string.match(/\b\w+\b/g);
+
 			var tokens = [];
 			var tokens_used = {}; // I can't believe javascript doesn't have a (IE compatible) way to check if a string is in a list, only an associative array object.
 		
-			for (i=0; i<tokens_with_quotes.length; i++) {
-				token = tokens_with_quotes[i].replace(/'/g, "");
+			for (i=0; i<term_tokens.length; i++) {
+				token = term_tokens[i];
 				if ((token in coef) && !(token in tokens_used)) {
 					tokens_used[token] = '';
 					tokens.push([token, coef[token].Trump, coef[token].Clinton]);
 					tokens.sort(function(a,b){return a[1]-b[1];});
 				};
 			};
+
+			document.getElementById('coef_div').innerHTML = '<h3>How Each Term Affected<br />The Odds Clinton or Trump Said This Sentence</h3>';
 
 			var svg_container = d3.select("#coef_div")
             .append("svg")
@@ -128,7 +131,9 @@
             	if (Math.abs(log_odds) >1) {log_odds = log_odds/Math.abs(log_odds)};
             	
             	color_percent = (log_odds/Math.abs(log_odds))*log_odds/max_coef;
-            	color_percent = Math.min(min_color, color_percent);
+            	// color_percent = Math.min(min_color, color_percent);
+            	color_percent = color_percent*(1-min_color)+(min_color);
+
             	adjusted_color = 255-Math.floor(255*color_percent);
 
             	if (log_odds < 0){ // bar is to the left, ie Clinton, ie blue
@@ -178,8 +183,8 @@
 	            			return parseFloat(Math.round(d[1] * 100) / 100).toFixed(2)+" - "+ d[0];
 	            		};
             	});
-
-
+            var Clinton_Label = svg_container.append('text').attr('x', 0).attr('y', 50).text('Clinton');
+			var Trump_Label = svg_container.append('text').attr('x', 400).attr('y', 50).text('Trump');
 		};
 
 		
