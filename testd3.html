@@ -6,7 +6,7 @@
 		<script>
 		var coef = {};
 		
-		d3.csv("average_coef_sept_8.csv", function(error, dataset) {
+		d3.csv("average_coef_sept_3.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
 				coef[d.Term] = {};
 				coef[d.Term]['Trump'] = d.Trump;
@@ -17,7 +17,7 @@
 
 		var sentences = {};
 		var num_sentences = 0;
-		d3.csv("cv_result_sept_8.csv", function(error, dataset) {
+		d3.csv("cv_result_sept_3.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
 				sentences[num_sentences] = {}
 				sentences[num_sentences]['Sentence'] = d.sentence;
