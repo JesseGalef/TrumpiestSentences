@@ -14,8 +14,8 @@
 			});
 		});
 		var sentences = {};
+		var num_sentences = 0;
 		d3.csv("cv_result_sept_3.csv", function(error, dataset) {
-			num_sentences = 0;
 			dataset.forEach(function(d) {
 				sentences[num_sentences] = {}
 				sentences[num_sentences]['Sentence'] = d.sentence;
