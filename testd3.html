@@ -89,7 +89,7 @@
 			else {
 				result_string = result_string + "The model got it wrong, predicting <br />";
 			};
-			result_string = result_string + "Trump: "+ parseFloat(Math.round(sentences[rand_id].Trump * 100)).toFixed(2) + "%<br />Clinton: "+parseFloat(Math.round(sentences[rand_id].Clinton * 100)).toFixed(2)+"%";
+			result_string = result_string + "Trump: "+ sentences[rand_id].Trump + "<br />Clinton: "+sentences[rand_id].Clinton;
 
 			document.getElementById('WhoSaidIt').innerHTML = result_string;
 			display_coefficients(sentences[rand_id].Sentence);
@@ -183,8 +183,8 @@
 	            			return parseFloat(Math.round(d[1] * 100) / 100).toFixed(2)+" - "+ d[0];
 	            		};
             	});
-            var Clinton_Label = svg_container.append('text').attr('x', 0).attr('y', 50).text('Clinton');
-			var Trump_Label = svg_container.append('text').attr('x', 400).attr('y', 50).text('Trump');
+
+            	
 		};
 
 		
