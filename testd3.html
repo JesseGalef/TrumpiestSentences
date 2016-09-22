@@ -1,38 +1,43 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<style>
+			.hidden {visibility: hidden;}
+		</style>
+
 		<script type="text/javascript" src="d3.min.js"></script>
 		<script>
 			
 		var coef = {};
 		
-		d3.csv("average_coef_sept_3.csv", function(error, dataset) {
+		d3.csv("average_coef.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
-				coef[d.Term] = {};
-				coef[d.Term]['Trump'] = d.Trump;
-				coef[d.Term]['Clinton'] = d.Clinton;
+				coef[d['']] = {};
+				coef[d['']]['Trump'] = d.Trump;
+				coef[d['']]['Clinton'] = d.Clinton;
 			});
 		});
-		var sentences = {};
-		var num_sentences = 0;
-		d3.csv("cv_result_sept_3.csv", function(error, dataset) {
+
+
+
+
+		var sentences = [];
+		d3.csv("cv_result.csv", function(error, dataset) {
 			dataset.forEach(function(d) {
-				sentences[num_sentences] = {}
-				sentences[num_sentences]['Sentence'] = d.sentence;
-				sentences[num_sentences]['Date'] = d.date;
-				sentences[num_sentences]['Speaker'] = d.speaker;
-				sentences[num_sentences]['Speech'] = d['title'];
-				sentences[num_sentences]['Trump'] = d.Trump;
-				sentences[num_sentences]['Token_List'] = d.token_list;
-				sentences[num_sentences]['Clinton'] = d.Clinton;
-				sentences[num_sentences]['Correct'] = d.correct;
-				num_sentences += 1;
+				this_sentence = {};
+				this_sentence['Sentence'] = d.sentence;
+				this_sentence['Date'] = d.date;
+				this_sentence['Speaker'] = d.speaker;
+				this_sentence['Speech'] = d['title'];
+				this_sentence['Trump'] = d.Trump;
+				this_sentence['Token_List'] = d.token_list;
+				this_sentence['Clinton'] = d.Clinton;
+				this_sentence['Correct'] = d.correct;
+				sentences.push(this_sentence);
 			});
-		var rand_id = 0;
-		// console.log(dictionary['believe']);
-		// console.log(dataset[0]);
+		sentences.sort(function(a,b){return a.Trump-b.Trump;});
+		var sent_id = 0;
 		});
-		
 		</script>
 
 		<script>
@@ -44,6 +49,7 @@
             var text_margin = 10;
             var max_coef = Math.log(5);
             var min_color = .5;
+
 		function myFunction() {
 		    var x = document.getElementById("myText").value;
 		    var demo_text = document.getElementById('demo').innerHTML;
@@ -58,52 +64,84 @@
 		};
 		function randomSentence() {
 			document.getElementById('QuizMeButton').visible = false;
-			rand_id = Math.floor(Math.random()*num_sentences);
-			console.log(rand_id);
+			sent_id = Math.floor(Math.random()*sentences.length);
+			console.log(sent_id);
 		    // var x = document.getElementById("myText").value;
 		    // var demo_text = document.getElementById('demo').innerHTML;
-		    document.getElementById('sentence').innerHTML = "\""+sentences[rand_id].Sentence+"\"";
-		    document.getElementById('coef_div').innerHTML = '';		    
+		    document.getElementById('sentence').innerHTML = "\""+sentences[sent_id].Sentence+"\"";
+		    document.getElementById('coef_div').innerHTML = '';
+
+		    // d3.select("#prediction").classed("hidden", true);
+
+
 		    document.getElementById('WhoSaidIt').innerHTML = "<strong>Who said this?</strong><br /><button onclick='guess(\"Clinton\")'>Clinton</button><button onclick='guess(\"Trump\")'>Trump</button>";
 		};
 		function guess(guessed_candidate) {
 			var result_string = "";
-			if (sentences[rand_id].Speaker == guessed_candidate) {
+			var prediction_string = "";
+			if (sentences[sent_id].Speaker == guessed_candidate) {
 				result_string = result_string + "Correct! <br />";
 			}
 			else {
 				result_string = result_string + "Incorrect! <br />";
 			};
-			result_string = result_string + "This sentence was said on "+sentences[rand_id].Date +" during \"" +sentences[rand_id].Speech +"\"<br /><br />";
-			if (sentences[rand_id].Correct == "True") {
-				result_string = result_string + "The model got it right, predicting <br />";
+			result_string = result_string + "This sentence was said on "+sentences[sent_id].Date +" during \"" +sentences[sent_id].Speech +"\"<br /><br />";
+
+			if (sentences[sent_id].Correct == "True") {
+				prediction_string = prediction_string + "The model got it right, predicting <br />";
 			}
 			else {
-				result_string = result_string + "The model got it wrong, predicting <br />";
+				prediction_string = prediction_string + "The model got it wrong, predicting <br />";
 			};
-			result_string = result_string + "Trump: "+ sentences[rand_id].Trump + "<br />Clinton: "+sentences[rand_id].Clinton;
-			document.getElementById('WhoSaidIt').innerHTML = result_string;
-			display_coefficients(sentences[rand_id].Token_List);
+			prediction_string = prediction_string + "Trump: "+ sentences[sent_id].Trump + "<br />Clinton: "+sentences[sent_id].Clinton;
+			
+			document.getElementById('WhoSaidIt').innerHTML = result_string + '\n\n' + prediction_string;
+
+		 //    d3.select("#prediction").classed("hidden", false);
+
+			// document.getElementById('prediction').style = 'visibility: visible';
+			// // document.getElementById('prediction_bar').style=
+
+
+			// var bar_svg = d3.select("#prediction_svg")
+   //          var percent_bar = bar_svg.selectAll('rect').data(sentences[sent_id].Trump).enter().append('rect')
+   //          .attr('height', 100)
+   //          .attr('width', function (d) {return d.Clinton*200 + 'px';})
+   //          .attr('fill', 'blue');
+
+
+			display_coefficients(sentences[sent_id].Sentence);
 		};
-		function display_coefficients(token_string) {
-			var list = ''
-			tokens_with_quotes = token_string.match(/'(.*?)'/g);
-			var tokens = [];
+		function display_coefficients(token_string) {			
+			tokens = token_string.match(/\b[\w']+\b/g);
+
+			var terms = [];
 			var tokens_used = {}; // I can't believe javascript doesn't have a (IE compatible) way to check if a string is in a list, only an associative array object.
 		
-			for (i=0; i<tokens_with_quotes.length; i++) {
-				token = tokens_with_quotes[i].replace(/'/g, "");
-				if ((token in coef) && !(token in tokens_used)) {
-					tokens_used[token] = '';
-					tokens.push([token, coef[token].Trump, coef[token].Clinton]);
-					tokens.sort(function(a,b){return a[1]-b[1];});
+			for (i=0; i<tokens.length; i++) {
+				
+				for (gram = 0; gram <2; gram++) { //for each i, push the token, bigram, and trigram
+					var term = '';
+					for (add_gram = 0; add_gram <= gram && i+add_gram<tokens.length; add_gram++) {
+							term = term+' '+tokens[i+add_gram];
+					};
+					term = term.trim();
+					if ((term in coef) && !(term in tokens_used)) {
+						tokens_used[term] = '';
+						terms.push([term, coef[term].Trump, coef[term].Clinton]);
+					};
 				};
 			};
-			var svg_container = d3.select("#coef_div")
-            .append("svg")
-            .attr("width", 500)
-            .attr("height", 500);
-            var bars = svg_container.selectAll('rect').data(tokens).enter().append('rect');
+
+			if (terms.length >20){ // If there are more than 20, take the largest 20
+				var sorted = terms.sort(function(a,b){return Math.max(a[1],a[2])-Math.max(b[1],b[2]);});
+				terms = sorted.reverse().slice(0, 20);
+				};
+			terms.sort(function(a,b){return a[1]-b[1];});
+
+			
+			var svg_container = d3.select("#coef_div").append("svg").attr("width", 500).attr("height", 500);
+            var bars = svg_container.selectAll('rect').data(terms).enter().append('rect');
             bars = bars
             .attr('height', bar_height)
             // .attr('fill', 'green') // write a function for this soon
@@ -116,7 +154,6 @@
             	color_percent = Math.min(min_color, color_percent);
             	adjusted_color = 255-Math.floor(255*color_percent);
             	if (log_odds < 0){ // bar is to the left, ie Clinton, ie blue
-            		// console.log(log_odds, color_percent);
             		return "rgb("+adjusted_color+","+adjusted_color+",255)";
             	}
             	else {
@@ -134,7 +171,8 @@
 					};
 				})
             .attr('width', function (d){return Math.abs(Math.log(d[1]))*width_multiplier;});
-            var terms = svg_container.selectAll('text').data(tokens).enter().append('text')
+            
+            var terms = svg_container.selectAll('text').data(terms).enter().append('text')
             	.attr('x', function (d) {
             		if (d[1]<1) { //Implies bar to the left, so text to the right
             			return middle + text_margin+'px';
@@ -175,12 +213,16 @@
 			<!-- <input type="text" id="sentence_input" value="Who said it?" /> -->
 			<button id='QuizMeButton' onclick="randomSentence()">Quiz me!</button>
 			<p id='WhoSaidIt'></p>
-			<div id='coef_div'>
-			</div>
+			<!-- <div id='prediction' style='visibility: hidden'>
+				<img src='Clintonheadshot.jpg' style='float:left; margin:0 10px 0 0;' />
+				<div id='prediction_bar' style='height: 100px; width: 100%;'></div>
+				<img src='Trumpheadshot.jpg' style='float:right; margin:0 0 0 10px;' />
+			</div> -->
+			<div id='coef_div'></div>
 
 
 		</div> 
-<div>
+<div style='clear:both'>
 			<!-- // <script src="testd3.js" charset="utf-8"></script> -->
 			<h3>Look up terms</h3>
 
