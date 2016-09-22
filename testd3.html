@@ -3,6 +3,8 @@
 	<head>
 		<style>
 			.hidden {visibility: hidden;}
+			#sentence {border: 2px solid black;
+						padding: 10px;}
 		</style>
 
 		<script type="text/javascript" src="d3.min.js"></script>
@@ -35,22 +37,25 @@
 				this_sentence['Correct'] = d.correct;
 				sentences.push(this_sentence);
 			});
-		sentences.sort(function(a,b){return a.Trump-b.Trump;});
-		var sent_id = 0;
+		// sentences.sort(function(a,b){return a.Trump-b.Trump;});
+		// pre-sorting these in python before exporting
+
 		});
 		</script>
 
 		<script>
 		
+        	var sent_id = 0;
             var bar_height = 20;
             var bar_margin = 2;
             var middle = 250;
             var width_multiplier = 80;
             var text_margin = 10;
-            var max_coef = Math.log(5);
+            var max_coef = Math.log(10);
             var min_color = .5;
+            
 
-		function myFunction() {
+		function checkTerm() {
 		    var x = document.getElementById("myText").value;
 		    var demo_text = document.getElementById('demo').innerHTML;
 		    if (x in coef) {
@@ -62,31 +67,39 @@
 				document.getElementById("not_found").innerHTML = "Not in top 2500";		
 		    };
 		};
+		
 		function randomSentence() {
 			document.getElementById('QuizMeButton').visible = false;
 			sent_id = Math.floor(Math.random()*sentences.length);
 			console.log(sent_id);
 		    // var x = document.getElementById("myText").value;
 		    // var demo_text = document.getElementById('demo').innerHTML;
-		    document.getElementById('sentence').innerHTML = "\""+sentences[sent_id].Sentence+"\"";
-		    document.getElementById('coef_div').innerHTML = '';
+		    
+		    
 
-		    // d3.select("#prediction").classed("hidden", true);
+		    displaySentence();
+		    giveChoice();
+		    d3.select("#ModelThought").classed("hidden", true);
 
-
-		    document.getElementById('WhoSaidIt').innerHTML = "<strong>Who said this?</strong><br /><button onclick='guess(\"Clinton\")'>Clinton</button><button onclick='guess(\"Trump\")'>Trump</button>";
 		};
-		function guess(guessed_candidate) {
-			var result_string = "";
-			var prediction_string = "";
-			if (sentences[sent_id].Speaker == guessed_candidate) {
-				result_string = result_string + "Correct! <br />";
-			}
-			else {
-				result_string = result_string + "Incorrect! <br />";
-			};
-			result_string = result_string + "This sentence was said on "+sentences[sent_id].Date +" during \"" +sentences[sent_id].Speech +"\"<br /><br />";
 
+		function giveChoice() {
+			document.getElementById('WhoSaidIt').innerHTML = "<h3 style='margin: 0 auto;'>Who said this?</h3><br /> <img src='Clintonheadshot.jpg' onclick='guess(\"Clinton\")' /><img src='Trumpheadshot.jpg' ='guess(\"Trump\")' />";
+
+		};
+
+		function displaySentence(){
+			document.getElementById('sentence').innerHTML = "\""+sentences[sent_id].Sentence+"\"";
+		    d3.select("#coef_div_wrapper").classed("hidden", true);
+		    
+		};
+
+		function displayPrediction(){
+			var prediction_string = "";
+			document.getElementById('WhoSaidIt').innerHTML = sentences[sent_id].Speaker + " said this on "+sentences[sent_id].Date +" during \"" +sentences[sent_id].Speech +"\"<br /><br />";
+
+
+			d3.select("#ModelThought").classed("hidden", false);
 			if (sentences[sent_id].Correct == "True") {
 				prediction_string = prediction_string + "The model got it right, predicting <br />";
 			}
@@ -95,7 +108,22 @@
 			};
 			prediction_string = prediction_string + "Trump: "+ sentences[sent_id].Trump + "<br />Clinton: "+sentences[sent_id].Clinton;
 			
-			document.getElementById('WhoSaidIt').innerHTML = result_string + '\n\n' + prediction_string;
+			document.getElementById('ModelThought').innerHTML = prediction_string;
+		};
+
+
+		function guess(guessed_candidate) {
+			var result_string = "";
+			if (sentences[sent_id].Speaker == guessed_candidate) {
+				result_string = result_string + "Correct! <br />";
+			}
+			else {
+				result_string = result_string + "Incorrect! <br />";
+			};
+			
+			document.getElementById('WhoSaidIt').innerHTML = result_string;
+
+			displayPrediction();
 
 		 //    d3.select("#prediction").classed("hidden", false);
 
@@ -112,7 +140,8 @@
 
 			display_coefficients(sentences[sent_id].Sentence);
 		};
-		function display_coefficients(token_string) {			
+		function display_coefficients(token_string) {	
+			document.getElementById('coef_div').innerHTML = '';
 			tokens = token_string.match(/\b[\w']+\b/g);
 
 			var terms = [];
@@ -151,8 +180,12 @@
             	if (Math.abs(log_odds) >1) {log_odds = log_odds/Math.abs(log_odds)};
             	
             	color_percent = (log_odds/Math.abs(log_odds))*log_odds/max_coef;
+
             	color_percent = Math.min(min_color, color_percent);
+            	
             	adjusted_color = 255-Math.floor(255*color_percent);
+            	// high color/hex values are closer to white, low are stronger color
+
             	if (log_odds < 0){ // bar is to the left, ie Clinton, ie blue
             		return "rgb("+adjusted_color+","+adjusted_color+",255)";
             	}
@@ -199,27 +232,52 @@
 	            			return parseFloat(Math.round(d[1] * 100) / 100).toFixed(2)+" - "+ d[0];
 	            		};
             	});
+            	d3.select("#coef_div_wrapper").classed("hidden", false);
 		};
 		
+		function changeID(changeAmount) {
+			sent_id = (((sent_id+changeAmount)%sentences.length) + sentences.length)%sentences.length;
+			setID(sent_id);
+		};
+
+		function setID(newID){
+			sent_id = newID;
+			document.getElementById('WhoSaidIt').innerHTML = '';
+			displaySentence();
+			displayPrediction();
+			display_coefficients(sentences[sent_id].Sentence);
+		};
+
 		</script>
 
 
 	</head>
 
 	<body>
+
+
 		<div>
 
-			<p id="sentence"></p>
+			<div id='sentence_selection_div' class=''>
+				<button id='SortTrump' onclick="setID(sentences.length-1)">Top Trump-iness</button>
+				<button id='QuizMeButton' onclick="randomSentence()">Random Sentence - Quiz me!</button>
+				<button id='SortClinton' onclick="setID(0)">Top Clinton-ness</button>
+			<br />
+				<button id='previousSentence' onclick='changeID(-1)'>Previous</button>
+				<input type='text' id='sentID' value='0' />
+				<button id='nextSentence' onclick='changeID(1)'>Next</button>
+			</div>
+			<p id="sentence" style='height: 100px;'></p>
 			<!-- <input type="text" id="sentence_input" value="Who said it?" /> -->
-			<button id='QuizMeButton' onclick="randomSentence()">Quiz me!</button>
+			
 			<p id='WhoSaidIt'></p>
-			<!-- <div id='prediction' style='visibility: hidden'>
-				<img src='Clintonheadshot.jpg' style='float:left; margin:0 10px 0 0;' />
-				<div id='prediction_bar' style='height: 100px; width: 100%;'></div>
-				<img src='Trumpheadshot.jpg' style='float:right; margin:0 0 0 10px;' />
-			</div> -->
-			<div id='coef_div'></div>
+			<p id='ModelThought'></p>
+			<div id='coef_div_wrapper' class='hidden'>
+				<h3>Top Terms - How Each Word Affected the Predicted Odds Clinton or Trump was the Speaker</h3>
+				<div id='coef_div'></div>
+			</div>
 
+			
 
 		</div> 
 <div style='clear:both'>
@@ -230,7 +288,7 @@
 
 			<p id='not_found'></p>
 
-			<button onclick="myFunction()">Try it</button>
+			<button onclick="checkTerm()">Try it</button>
 
 			<p id="demo"></p>
 		</div>
