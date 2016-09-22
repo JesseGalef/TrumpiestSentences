@@ -4,7 +4,8 @@
 		<style>
 			.hidden {visibility: hidden;}
 			#sentence {border: 2px solid black;
-						padding: 10px;}
+						padding: 10px;
+						min-height: 120px;}
 		</style>
 
 		<script type="text/javascript" src="d3.min.js"></script>
@@ -261,13 +262,13 @@
 			<div id='sentence_selection_div' class=''>
 				<button id='SortTrump' onclick="setID(sentences.length-1)">Top Trump-iness</button>
 				<button id='QuizMeButton' onclick="randomSentence()">Random Sentence - Quiz me!</button>
-				<button id='SortClinton' onclick="setID(0)">Top Clinton-ness</button>
+				<button id='SortClinton' onclick="setID(0)">Top Clinton-y</button>
 			<br />
-				<button id='previousSentence' onclick='changeID(-1)'>Previous</button>
+				<button id='previousSentence' onclick='changeID(-1)'>More Clinton-y</button>
 				<input type='text' id='sentID' value='0' />
-				<button id='nextSentence' onclick='changeID(1)'>Next</button>
+				<button id='nextSentence' onclick='changeID(1)'>More Trump-ish</button>
 			</div>
-			<p id="sentence" style='height: 100px;'></p>
+			<p id="sentence"></p>
 			<!-- <input type="text" id="sentence_input" value="Who said it?" /> -->
 			
 			<p id='WhoSaidIt'></p>
