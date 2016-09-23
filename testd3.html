@@ -6,6 +6,24 @@
 			#sentence {border: 2px solid black;
 						padding: 10px;
 						min-height: 120px;}
+			#ClintonButton {
+				background: url('Clintonheadshot.jpg');
+			     outline: none;
+			     border: none;
+			     width: 159px;
+			     height: 160px;
+			     float: left;
+			     cursor:pointer;
+			}
+			#TrumpButton {
+				background: url('Trumpheadshot.jpg');
+			     outline: none;
+			     border: none;
+			     width: 159px;
+			     height: 160px;
+			     cursor:pointer;
+			     float: right;
+			}
 		</style>
 
 		<script type="text/javascript" src="d3.min.js"></script>
@@ -85,8 +103,7 @@
 		};
 
 		function giveChoice() {
-			document.getElementById('WhoSaidIt').innerHTML = "<h3 style='margin: 0 auto;'>Who said this?</h3><br /> <img src='Clintonheadshot.jpg' onclick='guess(\"Clinton\")' /><img src='Trumpheadshot.jpg' ='guess(\"Trump\")' />";
-
+			document.getElementById('WhoSaidIt').innerHTML = "<h2 style='text-align: center;'>Who said this?</h2><br /> <button id = 'ClintonButton' onclick='guess(\"Clinton\")' /><button id='TrumpButton' onclick='guess(\"Trump\")' />";
 		};
 
 		function displaySentence(){
@@ -264,9 +281,9 @@
 				<button id='QuizMeButton' onclick="randomSentence()">Random Sentence - Quiz me!</button>
 				<button id='SortClinton' onclick="setID(0)">Top Clinton-y</button>
 			<br />
-				<button id='previousSentence' onclick='changeID(-1)'>More Clinton-y</button>
-				<input type='text' id='sentID' value='0' />
 				<button id='nextSentence' onclick='changeID(1)'>More Trump-ish</button>
+				<input type='text' id='sentID' value='0' />
+				<button id='previousSentence' onclick='changeID(-1)'>More Clinton-y</button>
 			</div>
 			<p id="sentence"></p>
 			<!-- <input type="text" id="sentence_input" value="Who said it?" /> -->
@@ -281,7 +298,7 @@
 			
 
 		</div> 
-<div style='clear:both'>
+<div style='margin-top: 50px; clear:both;'>
 			<!-- // <script src="testd3.js" charset="utf-8"></script> -->
 			<h3>Look up terms</h3>
 
