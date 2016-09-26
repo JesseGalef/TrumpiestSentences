@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			.hidden {visibility: hidden;}
+			
+			.num_labels {font-size: 12px;}
+
+			#sentence {border: 2px solid black;
+						padding: 10px;
+						min-height: 80px;}
+
+			.browseButton {
+				width: 170px;
+			}
+			.browseHeader {
+				width: 150px;
+				font-weight: bold;
+				float: left;
+			}
+			#ClintonButton {
+				background: url('Clintonheadshot.jpg');
+			     outline: none;
+			     border: none;
+			     width: 159px;
+			     height: 160px;
+			     float: left;
+			     cursor:pointer;
+			}
+			#TrumpButton {
+				background: url('Trumpheadshot.jpg');
+			     outline: none;
+			     border: none;
+			     width: 159px;
+			     height: 160px;
+			     cursor:pointer;
+			     float: right;
+			}
+			#feedback {
+				/*float: left;
+				width: 200px;*/
+			}
+			#coef_div_wrapper {
+				/*float: right;
+				width: 400px;*/
+			}
+		</style>
+
+		<script type="text/javascript" src="d3.min.js"></script>
+		<script>
+			
+		var coef = {};
+		var sorted_coef = [];
+
+		d3.csv("average_coef.csv", function(error, dataset) {
+			dataset.forEach(function(d) {
+				coef[d['']] = {};
+				coef[d['']]['Trump'] = d.Trump;
+				coef[d['']]['Clinton'] = d.Clinton;
+				sorted_coef.push([d[''], d.Trump, d.Clinton])
+			});
+		});
+		sorted_coef.sort(function(a,b){return b[1]-a[1];});
+
+
+		var sentences = [];
+		d3.csv("cv_result.csv", function(error, dataset) {
+			dataset.forEach(function(d) {
+				this_sentence = {};
+				this_sentence['Sentence'] = d.sentence;
+				this_sentence['Date'] = d.date;
+				this_sentence['Speaker'] = d.speaker;
+				this_sentence['Speech'] = d['title'];
+				this_sentence['Speech_idx'] = d['speech_idx'];
+				this_sentence['Trump'] = d.Trump;
+				this_sentence['Clinton'] = d.Clinton;
+				this_sentence['Correct'] = d.correct;
+				sentences.push(this_sentence);
+				// pre-sorting these in python before exporting
+			});
+		});
+
+		var links = {};
+		
+		d3.csv("speech_links.csv", function(error, dataset) {
+			dataset.forEach(function(d) {
+				links[d['idx']] = d['link'];
+			});
+		});
+	
+	
+    	var sent_id = 0;
+    	var coef_id = 0;
+        var bar_height = 15;
+        var bar_margin = 2;
+        var middle = 250;
+        var max_coef = Math.log(13); // values hard coded for now, plan to use scale later
+        var width_multiplier = middle/max_coef;
+        var text_margin = 10;
+        
+        var min_color = .5;
+        var bar_offset = 10;
+        var bar_label_min = 1.5;
+
+        var term_h3_text = "Top Terms - How Each Word Affected the Predicted Odds Clinton or Trump was the Speaker";
+        var pronoun_h3_text = "How Top Pronouns Affected the Predicted Odds Clinton or Trump Was the Speaker";
+
+        var scale = d3.scale.linear()
+                .domain([100, 500])
+                .range([10, 350]);
+
+                    
+
+		function randomSentence() {
+			document.getElementById('QuizMeButton').visible = false;
+			sent_id = Math.floor(Math.random()*sentences.length);
+			console.log(sent_id);
+		    displaySentence();
+		    giveChoice();
+		    d3.select("#ModelThought").classed("hidden", true);
+
+		};
+
+		function giveChoice() {
+			document.getElementById('WhoSaidIt').innerHTML = "<h2 style='text-align: center;'>Who said this?</h2><button id = 'ClintonButton' onclick='guess(\"Clinton\")' /><button id='TrumpButton' onclick='guess(\"Trump\")' />";
+		};
+
+		function displaySentence(){
+			document.getElementById('sentence').value = "\""+sentences[sent_id].Sentence+"\"";
+		    d3.select("#coef_div_wrapper").classed("hidden", true);
+		    
+		};
+
+		function displayPrediction(){
+			var prediction_string = "";
+			document.getElementById('WhoSaidIt').innerHTML += sentences[sent_id].Speaker + " said this on "+sentences[sent_id].Date +" during \"<a href=\'" + links[sentences[sent_id].Speech_idx] + "\' target=\'_blank\'>"+sentences[sent_id].Speech +"</a>\"";
+
+			d3.select("#ModelThought").classed("hidden", false);
+			if (sentences[sent_id].Correct == "True") {
+				prediction_string = prediction_string + "The model got it right, predicting <br />";
+			}
+			else {
+				prediction_string = prediction_string + "The model got it wrong, predicting <br />";
+			};
+			prediction_string = prediction_string + "Trump: "+ Math.floor(sentences[sent_id].Trump*10000)/100 + "%<br />Clinton: "+Math.floor(sentences[sent_id].Clinton*10000)/100+"%";
+			
+			document.getElementById('ModelThought').innerHTML = prediction_string;
+		};
+
+
+		function guess(guessed_candidate) {
+			var result_string = "";
+			if (sentences[sent_id].Speaker == guessed_candidate) {
+				result_string = result_string + "Correct! <br />";
+			}
+			else {
+				result_string = result_string + "Incorrect! <br />";
+			};
+			
+			document.getElementById('WhoSaidIt').innerHTML = result_string;
+
+			displayPrediction();
+			document.getElementById('termH3').innerHTML = term_h3_text;
+			displayCoefficients(getTerms(sentences[sent_id].Sentence));
+		};
+
+		function getTerms(token_string) {
+			tokens = token_string.match(/\b[\w']+\b/g);
+
+			var terms = [];
+			var tokens_used = {}; // I can't believe javascript doesn't have a (IE compatible) way to check if a string is in a list, only an associative array object.
+		
+			for (i=0; i<tokens.length; i++) {
+				 	
+				for (gram = 0; gram <2; gram++) { //for each i, push the token, bigram, and trigram
+					var term = '';
+					for (add_gram = 0; add_gram <= gram && i+add_gram<tokens.length; add_gram++) {
+							term = term+' '+tokens[i+add_gram];
+					};
+					term = term.trim();
+					if ((term in coef) && !(term in tokens_used)) {
+						tokens_used[term] = '';
+						terms.push([term, coef[term].Trump, coef[term].Clinton]);
+					};
+				};
+			};
+			return terms;
+
+		};
+
+		
+		function calculate_odds(terms) {
+			var odds = 1;
+			for (i=0; i<terms.length; i++){
+				odds = odds * terms[i][1];
+			};
+			return (odds/(1+odds));
+			};
+
+		function displayCoefficients(terms, hide_extra = false, sort_terms = true) {	
+			document.getElementById('coef_div').innerHTML = '';
+			console.log(terms);
+			if (terms.length >20){ // If there are more than 20, take the largest 20
+				var sorted = terms.sort(function(a,b){return Math.max(a[1],a[2])-Math.max(b[1],b[2]);});
+				var other_terms = calculate_odds(sorted.reverse().slice(20, sorted.length));
+				terms = sorted.slice(0, 20);
+
+				if (hide_extra == false) {
+					terms.push([['All other terms'],[other_terms],[1/other_terms]]);	
+				};
+				};
+			
+			if (sort_terms == true) {
+				terms.sort(function(a,b){return a[2]-b[2];});
+		}
+			
+			var svg_container = d3.select("#coef_div").append("svg").attr("width", 500).attr("height", 500);
+
+            var bars = svg_container.selectAll('rect').data(terms).enter().append('rect');
+            bars = bars
+            .attr('height', bar_height)
+            .attr('stroke', "rgb(0,0,0)")
+            .attr('fill', function (d) { // not coding flexibly byfor this iteration
+            	log_odds = Math.log(d[1])
+            	if (Math.abs(log_odds) >1) {log_odds = log_odds/Math.abs(log_odds)};
+            	
+            	color_percent = (log_odds/Math.abs(log_odds))*log_odds/max_coef;
+
+            	color_percent = Math.min(min_color, color_percent);
+            	
+            	adjusted_color = 255-Math.floor(255*color_percent);
+            	// high color/hex values are closer to white, low are stronger color
+
+            	if (log_odds < 0){ // bar is to the left, ie Clinton, ie blue
+            		return "rgb("+adjusted_color+","+adjusted_color+",255)";
+            	}
+            	else {
+					return "rgb(255,"+adjusted_color+","+adjusted_color+")";
+					};
+            })
+            .attr('y', function (d,i) {return i*(bar_height+bar_margin) + 'px';})
+            .attr('x', function (d) {
+            	var log_odds = Math.log(d[1]);
+					if (log_odds < 0) {
+						return middle+(log_odds*width_multiplier) + 'px'; // Since log_odds is negative, this shifts the bar to the left
+					}
+					else {
+						return middle+'px';
+					};
+				})
+            .attr('width', function (d){return Math.abs(Math.log(d[1]))*width_multiplier;});
+
+            // Text for the terms
+            var add_text = svg_container.selectAll('text').data(terms).enter()
+
+            var term_labels = add_text.append('text')
+            	.attr('x', function (d) {
+            		if (d[1]<1) { //Implies bar to the left, so text to the right
+            			return middle + text_margin+'px';
+            		}
+            		else {
+            			return middle - text_margin + 'px';
+            		}
+            	})
+            	.attr('y', function (d,i) {return i*(bar_height+bar_margin) + 'px';})
+            	.attr('text-anchor', function (d) {
+            		if (d[1] <1) {
+            			return 'start';
+            		}
+            		else{
+            			return 'end';
+            		}
+            	})
+            	.attr('dy', '.87em')
+            	.text(function (d) {
+	            	return d[0];
+            	});
+
+        	// Text for the numbers inside the bars (or just outside)
+        	var number_labels = add_text.append('text')
+        	.attr('x', function (d) {
+        		if (d[2]>1) { //Implies bar to the left, so text is almost as far left as the bar starts
+        			if (d[2]<=bar_label_min) {
+        				// The bar is too small to fit the number
+        				return middle - (Math.log(d[2])*width_multiplier) - bar_offset + 'px';
+        			}
+        			else {
+        				return middle - (Math.log(d[2])*width_multiplier) + bar_offset + 'px';
+        			};
+        		}
+        		else {
+            		if (d[1]<=bar_label_min) {
+        				// The bar is too small to fit the number
+        				return middle + (Math.log(d[1])*width_multiplier) + bar_offset + 'px';
+        			}
+        			else {
+        				return middle + (Math.log(d[1])*width_multiplier) - bar_offset + 'px';
+        			};
+        		}
+        	})
+        	.attr('y', function (d,i) {return i*(bar_height+bar_margin) + 'px';})
+        	.attr('text-anchor', function (d) {
+        		if (((d[2] >1 )&&(d[2]>=bar_label_min))||((d[1]>1)&&(d[1]<=bar_label_min))) {
+        			//Bar to left and bar large enough, or bar to right and too small 
+        			return 'start';
+        		}
+        		else{
+        			return 'end';
+        		}
+        	})
+        	.attr('dy', '1.1em')
+        	.attr('class', 'num_labels')
+        	.text(function (d) {
+        		if (d[1]<1) {
+            			return parseFloat(Math.round(d[2] * 100) / 100).toFixed(2);
+            		}
+            		else {
+            			return parseFloat(Math.round(d[1] * 100) / 100).toFixed(2);
+            		};
+        	});
+
+        	d3.select("#coef_div_wrapper").classed("hidden", false);
+		};
+		
+		function changeID(changeAmount) {
+			sent_id = (((sent_id+changeAmount)%sentences.length) + sentences.length)%sentences.length;
+			setID(sent_id);
+		};
+
+		function setID(newID){
+			sent_id = newID;
+			document.getElementById('WhoSaidIt').innerHTML = '';
+			displaySentence();
+			displayPrediction();
+			document.getElementById('termH3').innerHTML = term_h3_text;
+			displayCoefficients(getTerms(sentences[sent_id].Sentence));
+		};
+
+		function userInputButtonClick(){
+			var userText = document.getElementById('sentence').value.toLowerCase();
+			document.getElementById('WhoSaidIt').innerHTML = '';
+			var user_Terms = getTerms(userText);
+			var odds_Trump = calculate_odds(user_Terms);
+			var odds_Clinton = 1-odds_Trump;
+			document.getElementById('ModelThought').innerHTML = 'The model would predict this as '+Math.floor(odds_Trump*10000)/100+"% Trump vs. "+Math.floor(odds_Clinton*10000)/100+"% Clinton.";
+			d3.select("#ModelThought").classed("hidden", false);
+			displayCoefficients(getTerms(userText));
+		};
+
+		function showPronouns(){
+			var pronouns = "all another any anybody anyone anything both each each other either everybody everyone everything few he her hers herself him himself his i it its itself little many me mine more most much my myself neither no one nobody none nothing one one another other others our ours ourselves several she some somebody someone something that their theirs them themselves these they this those us we what whatever which whichever who whoever whom whomever whose yo your yours yourself yourselves";
+
+			displayCoefficients(getTerms(pronouns), hide_extra=true);
+
+			document.getElementById('termH3').innerHTML = pronoun_h3_text;
+		};
+
+		function showContrast(){
+			var contrasts = "president obama bernie senator sanders the muslims believe me illegal immigrants";
+
+			displayCoefficients(getTerms(contrasts), hide_extra=true, sort_terms=false);
+
+			document.getElementById('termH3').innerHTML = pronoun_h3_text;
+		}
+
+		function showCoefs(reverse){
+			
+			document.getElementById('WhoSaidIt').innerHTML = '';
+
+			document.getElementById('ModelThought').innerHTML = '';
+			document.getElementById('sentence').value = ''
+			d3.select("#ModelThought").classed("hidden", true);
+
+			displayCoefficients(sorted_coef.slice(Math.max(coef_id,0), Math.min(coef_id+20, sorted_coef.length)));
+
+		};
+
+		</script>
+
+
+	</head>
+
+	<body>
+
+		<div style='max-width: 900px;'>
+			<h2>Quantifying the Trump-iness of Political Sentences</h2>
+			<p>What makes Trump's speaking style distinct from Clinton's? What sentences are the Trump-iest of everything he's said this campaign trail? Can you beat the model at predicting who said what?
+			</p>
+			<div id='sentence_selection_div' class=''>
+				<div class='browseHeader'>Browse Sentences:</div>
+				<button class='browseButton' id='SortClinton' onclick="setID(0)">Top Clinton-y Sentence</button>
+				<button class='browseButton' id='previousSentence' onclick='changeID(-1)'>More Clinton-y</button>
+				<button class='browseButton' id='nextSentence' onclick='changeID(1)'>More Trump-ish</button>
+				<button class='browseButton' id='SortTrump' onclick="setID(sentences.length-1)">Top Trump-iness Sentence</button>
+			</div>
+			<div id='term_selection_div'>
+				<div class='browseHeader'>Browse Terms:</div>
+				<button class='browseButton' id='topTrumpCoef' onclick='coef_id = 0; showCoefs()'>Top Clinton Terms</button>
+				<button class='browseButton' id='topTrumpCoef' onclick='coef_id = Math.max(0,coef_id-20); showCoefs()'>More Clinton-y Terms</button>
+				<button class='browseButton' id='topTrumpCoef' onclick='coef_id = Math.min(sorted_coef.length-20,coef_id+20); showCoefs()'>More Trump-ish Terms</button>
+				<button class='browseButton' id='topClintonCoef' onclick='coef_id = sorted_coef.length - 20; showCoefs()'>Top Trump Terms</button>
+			</div>
+			<div id='random_button_div'>
+				<strong>Have some fun! Quiz yourself:</strong>
+				<button id='QuizMeButton' onclick="randomSentence()">Give Me a Random Sentence</button>
+			</div>
+			<textarea id="sentence" cols="105" rows="7"></textarea>
+			<br />
+			
+			<div id='user_input_div'>
+				<strong>Enter your own sentences/words to evaluate:</strong>
+				<button id='userInputButton' onclick='userInputButtonClick()'>Evaluate text</button>
+			</div>
+			
+			<div id='feedback'>
+			<div id='WhoSaidIt'></div>
+			<div id='ModelThought'></div>
+			</div>
+			<div id='coef_div_wrapper' class='hidden'>
+				<h3 id='termH3'></h3>
+				<div id='coef_div'></div>
+			</div>
+
+			
+
+		</div> 
+	</body>
+
+
+</html> 
