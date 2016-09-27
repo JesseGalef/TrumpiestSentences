@@ -43,13 +43,8 @@
 			     cursor:pointer;
 			     float: right;
 			}
-			#feedback {
-				/*float: left;
-				width: 200px;*/
-			}
-			#coef_div_wrapper {
-				/*float: right;
-				width: 400px;*/
+			#random_button_div {
+				margin-top: 10px;
 			}
 		</style>
 
@@ -110,6 +105,7 @@
         var bar_label_min = 1.5;
 
         var term_h3_text = "Top Terms - How Each Word Affected the Predicted Odds Clinton or Trump was the Speaker";
+        var interesting_h3_text = "How Different Words/Phrases Affected the Predicted Odds Clinton or Trump was the Speaker";
         var pronoun_h3_text = "How Top Pronouns Affected the Predicted Odds Clinton or Trump Was the Speaker";
 
         var scale = d3.scale.linear()
@@ -356,6 +352,11 @@
 
 		function showPronouns(){
 			var pronouns = "all another any anybody anyone anything both each each other either everybody everyone everything few he her hers herself him himself his i it its itself little many me mine more most much my myself neither no one nobody none nothing one one another other others our ours ourselves several she some somebody someone something that their theirs them themselves these they this those us we what whatever which whichever who whoever whom whomever whose yo your yours yourself yourselves";
+			document.getElementById('WhoSaidIt').innerHTML = '';
+
+			document.getElementById('ModelThought').innerHTML = '';
+			document.getElementById('sentence').value = ''
+			d3.select("#ModelThought").classed("hidden", true);
 
 			displayCoefficients(getTerms(pronouns), hide_extra=true);
 
@@ -364,10 +365,15 @@
 
 		function showContrast(){
 			var contrasts = "president obama bernie senator sanders the muslims believe me illegal immigrants";
+			document.getElementById('WhoSaidIt').innerHTML = '';
+
+			document.getElementById('ModelThought').innerHTML = '';
+			document.getElementById('sentence').value = ''
+			d3.select("#ModelThought").classed("hidden", true);
 
 			displayCoefficients(getTerms(contrasts), hide_extra=true, sort_terms=false);
 
-			document.getElementById('termH3').innerHTML = pronoun_h3_text;
+			document.getElementById('termH3').innerHTML = interesting_h3_text;
 		}
 
 		function showCoefs(reverse){
@@ -407,6 +413,10 @@
 				<button class='browseButton' id='topTrumpCoef' onclick='coef_id = Math.max(0,coef_id-20); showCoefs()'>More Clinton-y Terms</button>
 				<button class='browseButton' id='topTrumpCoef' onclick='coef_id = Math.min(sorted_coef.length-20,coef_id+20); showCoefs()'>More Trump-ish Terms</button>
 				<button class='browseButton' id='topClintonCoef' onclick='coef_id = sorted_coef.length - 20; showCoefs()'>Top Trump Terms</button>
+			</div>
+			<div id='preset_results'>
+				<strong>See how pronouns affect the odds:</strong>
+				<button id='Pronouns' onclick="showPronouns()">Top Pronouns</button>
 			</div>
 			<div id='random_button_div'>
 				<strong>Have some fun! Quiz yourself:</strong>
