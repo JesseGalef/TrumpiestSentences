@@ -101,6 +101,7 @@
         var text_margin = 10;
         
         var min_color = .5;
+        var color_power = 2;
         var bar_offset = 10;
         var bar_label_min = 1.5;
 
@@ -228,7 +229,7 @@
             	if (Math.abs(log_odds) >1) {log_odds = log_odds/Math.abs(log_odds)};
             	
             	color_percent = (log_odds/Math.abs(log_odds))*log_odds/max_coef;
-
+            	color_percent = color_percent^color_power;
             	color_percent = Math.min(min_color, color_percent);
             	
             	adjusted_color = 255-Math.floor(255*color_percent);
