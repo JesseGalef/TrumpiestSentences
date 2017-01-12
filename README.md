@@ -5,14 +5,9 @@
 # The Trump-iest and Clinton-est Sentences and Phrases from the 2016 Campaign:
 
 | Clinton | Trump |
+| --- | --- |
 | Top sentence: "That's why the slogan of my campaign is stronger together because I think if we work together and overcome the divisiveness that sometimes sets americans against one another and instead we make some big goals and I've set forth some big goals, getting the economy to work for everyone, not just those at the top, making sure we have the best education system from preschool through college and making it affordable and somp[sic] else." -- [Presidential Candidates Debate](http://www.c-span.org/video/?414227-1/presidential-nominees-debate-washington-university) Predicted Clinton: 0.99999999999 Predicted Trump: 1.04761466567e-11 Frustratingly, I couldn't download or embed the C-SPAN video for this clip, so here are two of the other top 5 Clinton-iest sentences: [wpvideo uOTaRvfu w=270] [Presidential Candidate Hillary Clinton Rally in Orangeburg, South Carolina](http://www.c-span.org/video/?405395-1/hillary-clinton-campaign-rally-orangeburg-south-carolina) [wpvideo E2mrhDua w=270] [Presidential Candidate Hillary Clinton Economic Policy Address](http://www.c-span.org/video/?327052-1/hillary-clinton-economic-policy-address) | Top sentence: "As you know, we have done very well with the evangelicals and with religion generally speaking, if you look at what's happened with all of the races, whether it's in south carolina, i went there and it was supposed to be strong evangelical, and i was not supposed to win and i won in a landslide, and so many other places where you had the evangelicals and you had the heavy christian groups and it was just -- it's been an amazing journey to have -- i think we won 37 different states." -- [Faith and Freedom Coalition Conference](http://www.c-span.org/video/?410912-1/faith-freedom-coalition-holds-annual-conference) Predicted Clinton: 4.29818403092e-11 Predicted Trump: 0.999999999957 Frustratingly, I couldn't download or embed the C-SPAN video for this clip either, so here are two of the other top 5 Trump-iest sentences: [wpvideo cZvP8Gip w=270] [Presidential Candidate Donald Trump Rally in Arizona](http://www.c-span.org/video/?406905-1/donald-trump-campaign-rally-phoenix-arizona) [wpvideo IeMZd06f w=270] [Presidential Candidate Donald Trump New York Primary Night Speech](http://www.c-span.org/video/?408385-1/donald-trump-primary-night-speech) |
-| 
-
-## **Top Terms**
-
- |
-| 
-
+| ## **Top Terms**
 | Term | Multiplier |
 | my husband | 12.95 |
 | recession | 10.28 |
@@ -88,6 +83,7 @@
 ## Cherrypicked pairs of terms:
 
 | Clinton | Trump |
+|---|---|
 | **Term** | **Multiplier** | **Term** | **Multiplier** |
 | president obama | 3.27 | obama | 6.49 |
 | immigrants | 3.40 | illegal immigrants | 4.87 |
