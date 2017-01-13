@@ -55,8 +55,8 @@ immigration reform | 5.627447962 | believe me | 5.324786849
 
 ## Cherrypicked pairs of terms:
 
-| Clinton | Trump |
-|---|---|
+| Clinton | | Trump | |
+|---|---|---|---|
 | **Term** | **Multiplier** | **Term** | **Multiplier** |
 | president obama | 3.27 | obama | 6.49 |
 | immigrants | 3.40 | illegal immigrants | 4.87 |
